@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "npm run compile",
+    "compile": "psa \"bower_components/purescript-*/src/**/*.purs\" \"src/**/*.purs\"",
+    "repl": "psci \"bower_components/purescript-*/src/**/*.purs\" \"src/**/*.purs\""
+  }
+}

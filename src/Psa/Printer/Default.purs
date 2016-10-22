@@ -63,7 +63,7 @@ renderWrapper gfx total index { error, path, position, source, message } =
     ]
 
 toLines :: String -> Rendered
-toLines = para <<< map (line <<< Array.singleton <<< plain) <<< Str.split "\n"
+toLines = para <<< map (line <<< Array.singleton <<< plain) <<< Str.split (Str.Pattern "\n")
 
 emptyLine :: Rendered
 emptyLine = line [ plain "" ]

@@ -5,17 +5,16 @@ import Data.Foldable (class Foldable, foldl)
 import Data.Monoid (class Monoid, mempty)
 import Data.String as Str
 import Data.Tuple (Tuple(..), snd)
-import Control.Apply ((<*))
 
 replicate :: forall m. (Monoid m) => Int -> m -> m
 replicate n m = go n mempty where
   go i x
     | i <= 0    = x
     | otherwise = go (i - 1) (x <> m)
-  
+
 padLeft :: Int -> String -> String
 padLeft width str = replicate (width - Str.length str) " " <> str
-  
+
 padRight :: Int -> String -> String
 padRight width str = str <> replicate (width - Str.length str) " "
 

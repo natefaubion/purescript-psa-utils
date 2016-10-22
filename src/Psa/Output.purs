@@ -8,16 +8,15 @@ module Psa.Output
   ) where
 
 import Prelude
+import Data.Array as Array
 import Data.Foldable (foldl, any)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Tuple (Tuple(..), fst)
 import Data.Set as Set
-import Data.String as Str
 import Data.StrMap as StrMap
-import Data.Array as Array
+import Data.String as Str
+import Data.Tuple (Tuple(..), fst)
 import Node.Path as Path
-import Psa.Types (PsaOptions, PsaError, PsaAnnotedError, PsaPath(..), PsaResult, Position, Filename, Lines,
-                  compareByLocation)
+import Psa.Types (PsaOptions, PsaError, PsaAnnotedError, PsaPath(..), PsaResult, Position, Filename, Lines, compareByLocation)
 
 data ErrorTag = Error | Warning
 
@@ -155,7 +154,7 @@ shouldShowError { filterCodes, censorCodes, censorSrc, censorLib, censorWarnings
 
 errorPath :: Array String -> String -> String -> PsaPath
 errorPath libDirs path short =
-  if any (path `startsWith` _) libDirs
+  if any (\dir -> path `startsWith` Str.Pattern dir) libDirs
     then Lib short
     else Src short
   where
@@ -163,7 +162,7 @@ errorPath libDirs path short =
     case Str.indexOf s s' of
       Just 0 -> true
       _      -> false
-  
+
 onTag :: forall a b. (a -> b) -> (a -> b) -> ErrorTag -> a -> b
 onTag f g Error   x = f x
 onTag f g Warning x = g x
@@ -235,7 +234,7 @@ trimPosition lines pos =
   -- TODO: this breaks if "--" is inside a quoted string.
   -- TODO: Block comments?
   trimComment col l =
-    case Str.indexOf "--" l of
+    case Str.indexOf (Str.Pattern "--") l of
       Just x | x == 0        -> Nothing
       Just x | x < (col - 1) -> trimCol (x + 1) l
       _                      -> Just col
@@ -247,7 +246,7 @@ trimPosition lines pos =
 -- | Trims extraneous whitespace from psc error messages.
 trimMessage :: String -> String
 trimMessage =
-  Str.split "\n"
+  Str.split (Str.Pattern "\n")
   >>> foldl dedent { lines: [], indent: top }
   >>> _.lines
   >>> foldl collapse []

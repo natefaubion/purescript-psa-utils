@@ -14,7 +14,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Set as Set
 import Data.StrMap as StrMap
 import Data.String as Str
-import Data.Tuple (Tuple(..), fst)
+import Data.Tuple (Tuple(..))
 import Node.Path as Path
 import Psa.Types (PsaOptions, PsaError, PsaAnnotedError, PsaPath(..), PsaResult, Position, Filename, Lines, compareByLocation)
 
@@ -58,6 +58,16 @@ output
   -> PsaResult
   -> m Output
 output loadLines options result = do
+  let
+    result' =
+      { warnings: pathOf <$> result.warnings
+      , errors: pathOf <$> result.errors
+      }
+    initialState =
+      { warnings: []
+      , errors: []
+      , stats: initialStats
+      }
   state  <- Array.foldM (onError Warning) initialState result'.warnings
   state' <- Array.foldM (onError Error) state result'.errors
   pure state'
@@ -66,22 +76,6 @@ output loadLines options result = do
     }
 
   where
-  initialState =
-    { warnings: []
-    , errors: []
-    , stats: initialStats
-    }
-
-  result' =
-    if not options.strict
-      then { warnings, errors }
-      else
-        let split = partition (isSrc <<< fst) warnings
-         in { warnings: split.fail, errors: errors <> split.pass }
-    where
-      warnings = pathOf <$> result.warnings
-      errors = pathOf <$> result.errors
-
   pathOf :: PsaError -> Tuple PsaPath PsaError
   pathOf x =
     case x.filename of
@@ -103,9 +97,11 @@ output loadLines options result = do
       pure $ onTag
         (_ { stats = stats, errors = state.errors <> log })
         (_ { stats = stats, warnings = state.warnings <> log })
-        tag state
+        tag' state
       where
-      stats = updateStats tag path error.errorCode (not (Array.null log)) state.stats
+      printed = not (Array.null log)
+      tag' = if printed && options.strict && isSrc path then Error else tag
+      stats = updateStats tag' path error.errorCode printed state.stats
 
 annotatedError :: PsaPath -> Maybe Lines -> PsaError -> PsaAnnotedError
 annotatedError path lines error = { path, position, message, source, error }

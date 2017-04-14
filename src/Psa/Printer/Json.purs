@@ -5,7 +5,6 @@ module Psa.Printer.Json
 import Prelude
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console as Console
-import Data.Argonaut.Printer (printJson)
 import Psa.Output (Output)
 import Psa.Types (encodePsaResult)
 
@@ -16,4 +15,4 @@ print output = do
         , errors: _.error <$> output.errors
         }
 
-  Console.error (printJson result)
+  Console.error (show result)

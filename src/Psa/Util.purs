@@ -18,6 +18,6 @@ padLeft width str = replicate (width - Str.length str) " " <> str
 padRight :: Int -> String -> String
 padRight width str = str <> replicate (width - Str.length str) " "
 
-iter_ :: forall m f a b. (Foldable f, Applicative m) => f a -> (Int -> a -> m b) -> m Unit
+iter_ :: forall m f a b. Foldable f => Applicative m => f a -> (Int -> a -> m b) -> m Unit
 iter_ xs f = snd $ foldl go (Tuple 0 (pure unit)) xs where
   go (Tuple i a) b = Tuple (i + 1) (a <* f i b)

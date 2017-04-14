@@ -170,19 +170,21 @@ parseSuggestion =
 encodePsaResult :: PsaResult -> Json
 encodePsaResult res = encodeJson $ runPure $ StrMap.runST do
   obj <- STMap.new
-  STMap.poke obj "warnings" $ encodeJson (encodePsaError <$> res.warnings)
-  STMap.poke obj "errors"   $ encodeJson (encodePsaError <$> res.errors)
+  _ <- STMap.poke obj "warnings" $ encodeJson (encodePsaError <$> res.warnings)
+  _ <- STMap.poke obj "errors"   $ encodeJson (encodePsaError <$> res.errors)
+  pure obj
 
 encodePsaError :: PsaError -> Json
 encodePsaError error = encodeJson $ runPure $ StrMap.runST do
   obj <- STMap.new
-  STMap.poke obj "moduleName"  $ encodeJson error.moduleName
-  STMap.poke obj "errorCode"   $ encodeJson error.errorCode
-  STMap.poke obj "errorLink"   $ encodeJson error.errorLink
-  STMap.poke obj "message"     $ encodeJson error.message
-  STMap.poke obj "filename"    $ encodeJson error.filename
-  STMap.poke obj "position"    $ encodeJson (maybe jsonNull encodePosition error.position)
-  STMap.poke obj "suggestion"  $ encodeJson (maybe jsonNull encodeSuggestion error.suggestion)
+  _ <- STMap.poke obj "moduleName"  $ encodeJson error.moduleName
+  _ <- STMap.poke obj "errorCode"   $ encodeJson error.errorCode
+  _ <- STMap.poke obj "errorLink"   $ encodeJson error.errorLink
+  _ <- STMap.poke obj "message"     $ encodeJson error.message
+  _ <- STMap.poke obj "filename"    $ encodeJson error.filename
+  _ <- STMap.poke obj "position"    $ encodeJson (maybe jsonNull encodePosition error.position)
+  _ <- STMap.poke obj "suggestion"  $ encodeJson (maybe jsonNull encodeSuggestion error.suggestion)
+  pure obj
 
 encodePosition :: Position -> Json
 encodePosition = unsafeCoerce
@@ -190,8 +192,9 @@ encodePosition = unsafeCoerce
 encodeSuggestion :: Suggestion -> Json
 encodeSuggestion suggestion = encodeJson $ runPure $ StrMap.runST do
   obj <- STMap.new
-  STMap.poke obj "replacement"  $ encodeJson suggestion.replacement
-  STMap.poke obj "replaceRange" $ encodeJson (maybe jsonNull encodePosition suggestion.replaceRange)
+  _ <- STMap.poke obj "replacement"  $ encodeJson suggestion.replacement
+  _ <- STMap.poke obj "replaceRange" $ encodeJson (maybe jsonNull encodePosition suggestion.replaceRange)
+  pure obj
 
 maybeProp :: forall a. (DecodeJson a) => JObject -> String -> Either String (Maybe a)
 maybeProp obj key = maybe (Right Nothing) decodeJson (StrMap.lookup key obj)

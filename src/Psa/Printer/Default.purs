@@ -18,7 +18,7 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console as Console
 import Ansi.Output (foreground, dim)
 import Ansi.Codes as Ansi
-import Psa.Types (Lines, Position, PsaAnnotedError, PsaOptions, PsaPath(..))
+import Psa.Types (Lines, Position, PsaAnnotedError, PsaOptions, PsaPath(..), StatVerbosity(..))
 import Psa.Output (OutputStats, Output)
 import Psa.Printer (Rendered, AnsiText, ansiLength, renderSource, plain, style, indent, line, para, render)
 import Psa.Util (replicate, iter_)
@@ -40,7 +40,10 @@ print options output = do
   toString = render options.ansi
   lenWarnings = Array.length output.warnings
   lenErrors = Array.length output.errors
-  renderStats' = if options.verboseStats then renderVerboseStats else renderStats
+  renderStats' = case options.statVerbosity of
+    NoStats -> mempty
+    CompactStats -> renderStats
+    VerboseStats -> renderVerboseStats
 
 renderWarning :: Int -> Int -> PsaAnnotedError -> Rendered
 renderWarning = renderWrapper (foreground Ansi.Yellow)

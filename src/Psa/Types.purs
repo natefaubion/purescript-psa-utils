@@ -2,6 +2,7 @@ module Psa.Types
   ( ErrorCode
   , ModuleName
   , Filename
+  , StatVerbosity(..)
   , PsaOptions
   , PsaResult
   , PsaError
@@ -37,6 +38,8 @@ type ModuleName = String
 type Filename = String
 type Lines = Array String
 
+data StatVerbosity = NoStats | CompactStats | VerboseStats
+
 -- | Relative files paths from the cwd, tagged as either being part of the
 -- | source files or library files of a project. The `Unknown` variant exists
 -- | because some psc errors are inter-module and aren't reported with a
@@ -69,7 +72,7 @@ type PsaOptions =
   , censorSrc :: Boolean
   , censorCodes :: Set ErrorCode
   , filterCodes :: Set ErrorCode
-  , verboseStats :: Boolean
+  , statVerbosity :: StatVerbosity
   , libDirs :: Array String
   , strict :: Boolean
   , cwd :: String

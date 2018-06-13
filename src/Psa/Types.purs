@@ -19,18 +19,18 @@ module Psa.Types
   ) where
 
 import Prelude
-import Data.Argonaut.Core (Json, JObject, jsonNull)
+
+import Data.Argonaut.Core (Json, jsonNull)
 import Data.Argonaut.Decode (decodeJson, class DecodeJson)
 import Data.Argonaut.Decode.Combinators ((.?))
 import Data.Argonaut.Encode (encodeJson)
-import Data.StrMap as StrMap
-import Data.StrMap.ST as STMap
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
-import Control.Monad.Eff (runPure)
+import Foreign.Object as FO
+import Foreign.Object.ST as FOST
 import Unsafe.Coerce (unsafeCoerce)
 
 type ErrorCode = String
@@ -126,14 +126,14 @@ compareByLocation err1 err2 =
                   (Tuple b.startLine b.startColumn)
     x  -> x
 
-parsePsaResult :: JObject -> Either String PsaResult
+parsePsaResult :: FO.Object Json -> Either String PsaResult
 parsePsaResult obj =
   { warnings: _
   , errors: _
   } <$> (obj .? "warnings" >>= traverse parsePsaError)
     <*> (obj .? "errors" >>= traverse parsePsaError)
 
-parsePsaError :: JObject -> Either String PsaError
+parsePsaError :: FO.Object Json -> Either String PsaError
 parsePsaError obj =
   { moduleName: _
   , errorCode: _
@@ -150,7 +150,7 @@ parsePsaError obj =
     <*> (obj .? "position" >>= parsePosition)
     <*> (obj .? "suggestion" >>= parseSuggestion)
 
-parsePosition :: Maybe JObject -> Either String (Maybe Position)
+parsePosition :: Maybe (FO.Object Json) -> Either String (Maybe Position)
 parsePosition =
   maybe (pure Nothing) \obj -> map Just $
     { startLine: _
@@ -162,7 +162,7 @@ parsePosition =
       <*> obj .? "endLine"
       <*> obj .? "endColumn"
 
-parseSuggestion :: Maybe JObject -> Either String (Maybe Suggestion)
+parseSuggestion :: Maybe (FO.Object Json) -> Either String (Maybe Suggestion)
 parseSuggestion =
   maybe (pure Nothing) \obj -> map Just $
     { replacement: _
@@ -171,35 +171,35 @@ parseSuggestion =
       <*> (obj .?? "replaceRange" >>= parsePosition)
 
 encodePsaResult :: PsaResult -> Json
-encodePsaResult res = encodeJson $ runPure $ StrMap.runST do
-  obj <- STMap.new
-  _ <- STMap.poke obj "warnings" $ encodeJson (encodePsaError <$> res.warnings)
-  _ <- STMap.poke obj "errors"   $ encodeJson (encodePsaError <$> res.errors)
+encodePsaResult res = encodeJson $ FO.runST do
+  obj <- FOST.new
+  _ <- FOST.poke "warnings" (encodeJson (encodePsaError <$> res.warnings)) obj
+  _ <- FOST.poke "errors"   (encodeJson (encodePsaError <$> res.errors)) obj
   pure obj
 
 encodePsaError :: PsaError -> Json
-encodePsaError error = encodeJson $ runPure $ StrMap.runST do
-  obj <- STMap.new
-  _ <- STMap.poke obj "moduleName"  $ encodeJson error.moduleName
-  _ <- STMap.poke obj "errorCode"   $ encodeJson error.errorCode
-  _ <- STMap.poke obj "errorLink"   $ encodeJson error.errorLink
-  _ <- STMap.poke obj "message"     $ encodeJson error.message
-  _ <- STMap.poke obj "filename"    $ encodeJson error.filename
-  _ <- STMap.poke obj "position"    $ encodeJson (maybe jsonNull encodePosition error.position)
-  _ <- STMap.poke obj "suggestion"  $ encodeJson (maybe jsonNull encodeSuggestion error.suggestion)
+encodePsaError error = encodeJson $ FO.runST do
+  obj <- FOST.new
+  _ <- FOST.poke "moduleName"  (encodeJson error.moduleName) obj
+  _ <- FOST.poke "errorCode"   (encodeJson error.errorCode) obj
+  _ <- FOST.poke "errorLink"   (encodeJson error.errorLink) obj
+  _ <- FOST.poke "message"     (encodeJson error.message) obj
+  _ <- FOST.poke "filename"    (encodeJson error.filename) obj
+  _ <- FOST.poke "position"    (encodeJson (maybe jsonNull encodePosition error.position)) obj
+  _ <- FOST.poke "suggestion"  (encodeJson (maybe jsonNull encodeSuggestion error.suggestion)) obj
   pure obj
 
 encodePosition :: Position -> Json
 encodePosition = unsafeCoerce
 
 encodeSuggestion :: Suggestion -> Json
-encodeSuggestion suggestion = encodeJson $ runPure $ StrMap.runST do
-  obj <- STMap.new
-  _ <- STMap.poke obj "replacement"  $ encodeJson suggestion.replacement
-  _ <- STMap.poke obj "replaceRange" $ encodeJson (maybe jsonNull encodePosition suggestion.replaceRange)
+encodeSuggestion suggestion = encodeJson $ FO.runST do
+  obj <- FOST.new
+  _ <- FOST.poke "replacement"  (encodeJson suggestion.replacement) obj
+  _ <- FOST.poke "replaceRange" (encodeJson (maybe jsonNull encodePosition suggestion.replaceRange)) obj
   pure obj
 
-maybeProp :: forall a. (DecodeJson a) => JObject -> String -> Either String (Maybe a)
-maybeProp obj key = maybe (Right Nothing) decodeJson (StrMap.lookup key obj)
+maybeProp :: forall a. (DecodeJson a) => FO.Object Json -> String -> Either String (Maybe a)
+maybeProp obj key = maybe (Right Nothing) decodeJson (FO.lookup key obj)
 
 infix 7 maybeProp as .??

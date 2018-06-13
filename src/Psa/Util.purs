@@ -2,7 +2,6 @@ module Psa.Util where
 
 import Prelude
 import Data.Foldable (class Foldable, foldl)
-import Data.Monoid (class Monoid, mempty)
 import Data.String as Str
 import Data.Tuple (Tuple(..), snd)
 

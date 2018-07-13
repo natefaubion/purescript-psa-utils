@@ -15,10 +15,12 @@ module Psa.Printer
   ) where
 
 import Prelude
-import Ansi.Output (foreground, dim)
+
 import Ansi.Codes as Ansi
-import Data.Monoid (class Monoid)
+import Ansi.Output (foreground, dim)
 import Data.Array as Array
+import Data.List.NonEmpty (NonEmptyList)
+import Data.List.NonEmpty as NEL
 import Data.String as Str
 import Data.Tuple (uncurry)
 import Psa.Types (Position, Lines)
@@ -53,12 +55,12 @@ instance monoidRow :: Monoid (Row a) where
 
 data AnsiText
   = Plain String
-  | Style (Array Ansi.GraphicsParam) String
+  | Style (NonEmptyList Ansi.GraphicsParam) String
 
 plain :: String -> AnsiText
 plain = Plain
 
-style :: Array Ansi.GraphicsParam -> String -> AnsiText
+style :: NonEmptyList Ansi.GraphicsParam -> String -> AnsiText
 style = Style
 
 ansiLength :: AnsiText -> Int
@@ -79,7 +81,7 @@ renderAnsi false (Plain s)   = s
 renderAnsi false (Style _ s) = s
 renderAnsi true  (Plain s)   = s
 renderAnsi true  (Style g s) =
-  Ansi.escapeCodeToString (Ansi.Graphics g) <> s <> Ansi.escapeCodeToString (Ansi.Graphics [Ansi.Reset])
+  Ansi.escapeCodeToString (Ansi.Graphics g) <> s <> Ansi.escapeCodeToString (Ansi.Graphics (NEL.singleton Ansi.Reset))
 
 renderSource :: Position -> Lines -> Rendered
 renderSource pos lines = renderAnnotation (gutter + 2) pos source'

@@ -8,13 +8,14 @@ module Psa.Output
   ) where
 
 import Prelude
+
 import Data.Array as Array
 import Data.Foldable (foldl, any)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Set as Set
-import Data.StrMap as StrMap
 import Data.String as Str
 import Data.Tuple (Tuple(..))
+import Foreign.Object as FO
 import Node.Path as Path
 import Psa.Types (PsaOptions, PsaError, PsaAnnotedError, PsaPath(..), PsaResult, Position, Filename, Lines, compareByLocation)
 
@@ -28,22 +29,22 @@ type Output =
 
 -- | Statistics are a ratio of errors shown to errors in total.
 type OutputStats =
-  { allWarnings :: StrMap.StrMap (Tuple Int Int)
-  , allErrors   :: StrMap.StrMap (Tuple Int Int)
-  , srcWarnings :: StrMap.StrMap (Tuple Int Int)
-  , srcErrors   :: StrMap.StrMap (Tuple Int Int)
-  , libWarnings :: StrMap.StrMap (Tuple Int Int)
-  , libErrors   :: StrMap.StrMap (Tuple Int Int)
+  { allWarnings :: FO.Object (Tuple Int Int)
+  , allErrors   :: FO.Object (Tuple Int Int)
+  , srcWarnings :: FO.Object (Tuple Int Int)
+  , srcErrors   :: FO.Object (Tuple Int Int)
+  , libWarnings :: FO.Object (Tuple Int Int)
+  , libErrors   :: FO.Object (Tuple Int Int)
   }
 
 initialStats :: OutputStats
 initialStats =
-  { allWarnings: StrMap.empty
-  , allErrors:   StrMap.empty
-  , srcWarnings: StrMap.empty
-  , srcErrors:   StrMap.empty
-  , libWarnings: StrMap.empty
-  , libErrors:   StrMap.empty
+  { allWarnings: FO.empty
+  , allErrors:   FO.empty
+  , srcWarnings: FO.empty
+  , srcErrors:   FO.empty
+  , libWarnings: FO.empty
+  , libErrors:   FO.empty
   }
 
 -- | Annotates a error/warning result set with original source lines, better
@@ -126,16 +127,16 @@ updateStats
   -> OutputStats
   -> OutputStats
 updateStats tag path code printed s =
-  { allWarnings: onTag id bumpCode tag s.allWarnings
-  , allErrors:   onTag bumpCode id tag s.allErrors
-  , srcWarnings: onTag id (onPath bumpCode id path) tag s.srcWarnings
-  , srcErrors:   onTag (onPath bumpCode id path) id tag s.srcErrors
-  , libWarnings: onTag id (onPath id bumpCode path) tag s.libWarnings
-  , libErrors:   onTag (onPath id bumpCode path) id tag s.libErrors
+  { allWarnings: onTag identity bumpCode tag s.allWarnings
+  , allErrors:   onTag bumpCode identity tag s.allErrors
+  , srcWarnings: onTag identity (onPath bumpCode identity path) tag s.srcWarnings
+  , srcErrors:   onTag (onPath bumpCode identity path) identity tag s.srcErrors
+  , libWarnings: onTag identity (onPath identity bumpCode path) tag s.libWarnings
+  , libErrors:   onTag (onPath identity bumpCode path) identity tag s.libErrors
   }
 
   where
-  bumpCode = StrMap.alter alterStat code
+  bumpCode = FO.alter alterStat code
   bump (Tuple a b) = Tuple (if printed then a + 1 else a) (b + 1)
   alterStat Nothing  = Just (bump (Tuple 0 0))
   alterStat (Just x) = Just (bump x)
@@ -222,12 +223,12 @@ trimPosition lines pos =
         _      -> Nothing
 
   trimCol col l =
-    case Str.charAt (col - 2) l of
+    case Str.codePointAt (col - 2) l of
       Just x | isPunc x -> trimCol (col - 1) l
       Just _            -> trimComment col l
       _                 -> Nothing
 
-  -- TODO: this breaks if "--" is inside a quoted string.
+  -- TODO: this breaks if "--" is insidentitye a quoted string.
   -- TODO: Block comments?
   trimComment col l =
     case Str.indexOf (Str.Pattern "--") l of
@@ -235,9 +236,7 @@ trimPosition lines pos =
       Just x | x < (col - 1) -> trimCol (x + 1) l
       _                      -> Just col
 
-  isPunc ' ' = true
-  isPunc ',' = true
-  isPunc _   = false
+  isPunc = (_ == Str.codePointFromChar ' ') ||  (_ == Str.codePointFromChar ',')
 
 -- | Trims extraneous whitespace from psc error messages.
 trimMessage :: String -> String
@@ -253,7 +252,7 @@ trimMessage =
   dedent { lines, indent } l
     | l == ""   = { lines: Array.snoc lines l, indent }
     | otherwise =
-      let indent' = Str.length $ Str.takeWhile (_ == ' ') l in
+      let indent' = Str.length $ Str.takeWhile (_ == Str.codePointFromChar ' ') l in
       if indent' < indent
         then { lines: Array.snoc lines (Str.drop indent' l), indent: indent' }
         else { lines: Array.snoc lines (Str.drop indent l), indent }

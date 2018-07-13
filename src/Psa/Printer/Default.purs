@@ -7,24 +7,25 @@ module Psa.Printer.Default
   ) where
 
 import Prelude
+
+import Ansi.Codes as Ansi
+import Ansi.Output (foreground, dim)
 import Data.Array as Array
 import Data.Foldable (sum, maximum)
+import Data.List.NonEmpty (NonEmptyList)
 import Data.Maybe (fromMaybe)
-import Data.Monoid (mempty)
 import Data.String as Str
-import Data.StrMap as StrMap
 import Data.Tuple (Tuple(..))
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console as Console
-import Ansi.Output (foreground, dim)
-import Ansi.Codes as Ansi
-import Psa.Types (Lines, Position, PsaAnnotedError, PsaOptions, PsaPath(..), StatVerbosity(..))
+import Effect (Effect)
+import Effect.Console as Console
+import Foreign.Object as FO
 import Psa.Output (OutputStats, Output)
 import Psa.Printer (Rendered, AnsiText, ansiLength, renderSource, plain, style, indent, line, para, render)
+import Psa.Types (Lines, Position, PsaAnnotedError, PsaOptions, PsaPath(..), StatVerbosity(..))
 import Psa.Util (replicate, iter_)
 
 -- | Prints output to the console.
-print :: forall eff. PsaOptions -> Output -> Eff (console :: Console.CONSOLE | eff) Unit
+print :: PsaOptions -> Output -> Effect Unit
 print options output = do
   iter_ output.warnings \i warning -> do
     Console.error $ toString (renderWarning lenWarnings (i + 1) warning)
@@ -51,7 +52,7 @@ renderWarning = renderWrapper (foreground Ansi.Yellow)
 renderError :: Int -> Int -> PsaAnnotedError -> Rendered
 renderError = renderWrapper (foreground Ansi.Red)
 
-renderWrapper :: Array Ansi.GraphicsParam -> Int -> Int -> PsaAnnotedError -> Rendered
+renderWrapper :: NonEmptyList Ansi.GraphicsParam -> Int -> Int -> PsaAnnotedError -> Rendered
 renderWrapper gfx total index { error, path, position, source, message } =
   para
     [ line $
@@ -74,7 +75,7 @@ emptyLine = line [ plain "" ]
 indented :: Rendered -> Rendered
 indented = indent [ plain "  " ]
 
-renderStatus :: Array Ansi.GraphicsParam -> Int -> Int -> String -> AnsiText
+renderStatus :: NonEmptyList Ansi.GraphicsParam -> Int -> Int -> String -> AnsiText
 renderStatus gfx total index code =
   style gfx $ "[" <> show index <> "/" <> show total <> " " <> code <> "]"
 
@@ -111,12 +112,12 @@ renderStats stats =
     ]
   where
   sumRatio (Tuple a b) _ (Tuple c d) = Tuple (a + c) (b + d)
-  srcWarnings = StrMap.fold sumRatio (Tuple 0 0) stats.srcWarnings
-  srcErrors   = StrMap.fold sumRatio (Tuple 0 0) stats.srcErrors
-  libWarnings = StrMap.fold sumRatio (Tuple 0 0) stats.libWarnings
-  libErrors   = StrMap.fold sumRatio (Tuple 0 0) stats.libErrors
-  allWarnings = StrMap.fold sumRatio (Tuple 0 0) stats.allWarnings
-  allErrors   = StrMap.fold sumRatio (Tuple 0 0) stats.allErrors
+  srcWarnings = FO.fold sumRatio (Tuple 0 0) stats.srcWarnings
+  srcErrors   = FO.fold sumRatio (Tuple 0 0) stats.srcErrors
+  libWarnings = FO.fold sumRatio (Tuple 0 0) stats.libWarnings
+  libErrors   = FO.fold sumRatio (Tuple 0 0) stats.libErrors
+  allWarnings = FO.fold sumRatio (Tuple 0 0) stats.allWarnings
+  allErrors   = FO.fold sumRatio (Tuple 0 0) stats.allErrors
 
 renderVerboseStats :: OutputStats -> Rendered
 renderVerboseStats stats =
@@ -126,13 +127,13 @@ renderVerboseStats stats =
     (libWarnings <> libErrors)
     (allWarnings <> allErrors)
   where
-  warnings = Array.sort (StrMap.keys stats.allWarnings)
-  errors   = Array.sort (StrMap.keys stats.allErrors)
+  warnings = Array.sort (FO.keys stats.allWarnings)
+  errors   = Array.sort (FO.keys stats.allErrors)
 
   warningLabels = Array.singleton <<< style (foreground Ansi.Yellow) <$> warnings
   errorLabels   = Array.singleton <<< style (foreground Ansi.Red) <$> errors
 
-  getStat key x = fromMaybe (Tuple 0 0) $ StrMap.lookup key x
+  getStat key x = fromMaybe (Tuple 0 0) $ FO.lookup key x
   getStats ks x = (\k -> renderStat $ getStat k x) <$> ks
 
   srcWarnings = getStats warnings stats.srcWarnings

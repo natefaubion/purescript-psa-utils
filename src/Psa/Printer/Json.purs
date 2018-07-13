@@ -3,16 +3,18 @@ module Psa.Printer.Json
   ) where
 
 import Prelude
-import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console as Console
+
+import Data.Argonaut.Core (stringify)
+import Effect (Effect)
+import Effect.Console as Console
 import Psa.Output (Output)
 import Psa.Types (encodePsaResult)
 
-print :: forall eff. Output -> Eff (console :: Console.CONSOLE | eff) Unit
+print :: Output -> Effect Unit
 print output = do
   let result = encodePsaResult
         { warnings: _.error <$> output.warnings
         , errors: _.error <$> output.errors
         }
 
-  Console.error (show result)
+  Console.error (stringify result)

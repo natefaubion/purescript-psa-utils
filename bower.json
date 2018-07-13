@@ -12,25 +12,24 @@
     "output"
   ],
   "dependencies": {
-    "purescript-prelude": "^3.0.0",
-    "purescript-eff": "^3.1.0",
-    "purescript-argonaut-core": "^3.1.0",
-    "purescript-argonaut-codecs": "^3.0.0",
-    "purescript-maybe": "^3.0.0",
-    "purescript-monoid": "^3.0.0",
-    "purescript-tuples": "^4.0.0",
-    "purescript-arrays": "^4.0.1",
-    "purescript-strings": "^3.0.0",
-    "purescript-sets": "^3.0.0",
-    "purescript-foldable-traversable": "^3.0.0",
-    "purescript-either": "^3.0.0",
-    "purescript-ansi": "^3.0.0",
-    "purescript-node-path": "^2.0.0",
-    "purescript-control": "^3.0.0",
-    "purescript-console": "^3.0.0",
-    "purescript-unsafe-coerce": "^3.0.0"
+    "purescript-prelude": "^4.0.0",
+    "purescript-effect": "^2.0.0",
+    "purescript-argonaut-core": "^4.0.0",
+    "purescript-argonaut-codecs": "^4.0.0",
+    "purescript-maybe": "^4.0.0",
+    "purescript-tuples": "^5.0.0",
+    "purescript-arrays": "^5.0.0",
+    "purescript-strings": "^4.0.0",
+    "purescript-ordered-collections": "^1.0.0",
+    "purescript-foldable-traversable": "^4.0.0",
+    "purescript-either": "^4.0.0",
+    "purescript-ansi": "^5.0.0",
+    "purescript-node-path": "^3.0.0",
+    "purescript-control": "^4.0.0",
+    "purescript-console": "^4.0.0",
+    "purescript-unsafe-coerce": "^4.0.0"
   },
   "devDependencies": {
-    "purescript-psci-support": "^3.0.0"
+    "purescript-psci-support": "^4.0.0"
   }
 }

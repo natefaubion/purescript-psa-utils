@@ -80,7 +80,7 @@ output loadLines options result = do
   pathOf :: PsaError -> Tuple PsaPath PsaError
   pathOf x =
     case x.filename of
-      Just f  -> Tuple (errorPath options.libDirs f (Path.relative options.cwd f)) x
+      Just f  -> Tuple (errorPath options.libDirs (Path.concat [ options.cwd, f ]) f) x
       Nothing -> Tuple Unknown x
 
   onError :: ErrorTag -> Output -> Tuple PsaPath PsaError -> m Output

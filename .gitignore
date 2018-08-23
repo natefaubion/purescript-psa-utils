@@ -3,4 +3,4 @@ node_modules
 output
 npm-debug.log
 .psa-stash
-.psci*
+.psc*

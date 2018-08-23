@@ -13,7 +13,7 @@ import Ansi.Output (foreground, dim)
 import Data.Array as Array
 import Data.Foldable (sum, maximum)
 import Data.List.NonEmpty (NonEmptyList)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String as Str
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -58,7 +58,7 @@ renderWrapper gfx total index { error, path, position, source, message } =
     [ line $
         [ renderStatus gfx total index error.errorCode
         , plain " "
-        , renderPath path
+        , renderPath path error.moduleName
         ] <> fromMaybe mempty (renderPosition <$> position)
     , emptyLine
     , indented
@@ -79,10 +79,14 @@ renderStatus :: NonEmptyList Ansi.GraphicsParam -> Int -> Int -> String -> AnsiT
 renderStatus gfx total index code =
   style gfx $ "[" <> show index <> "/" <> show total <> " " <> code <> "]"
 
-renderPath :: PsaPath -> AnsiText
-renderPath (Src f) = plain f
-renderPath (Lib f) = plain f
-renderPath _       = plain ""
+renderModuleName :: Maybe String -> AnsiText
+renderModuleName Nothing  = style dim "(unknown module)"
+renderModuleName (Just m) = plain m
+
+renderPath :: PsaPath -> Maybe String -> AnsiText
+renderPath (Src f) _ = plain f
+renderPath (Lib f) _ = plain f
+renderPath _       m = renderModuleName m
 
 renderPosition :: Position -> Array AnsiText
 renderPosition pos =

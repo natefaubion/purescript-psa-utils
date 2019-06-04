@@ -14,8 +14,8 @@
   "dependencies": {
     "purescript-prelude": "^4.0.0",
     "purescript-effect": "^2.0.0",
-    "purescript-argonaut-core": "^4.0.0",
-    "purescript-argonaut-codecs": "^4.0.0",
+    "purescript-argonaut-core": "^5.0.0",
+    "purescript-argonaut-codecs": "^6.0.2",
     "purescript-maybe": "^4.0.0",
     "purescript-tuples": "^5.0.0",
     "purescript-arrays": "^5.0.0",

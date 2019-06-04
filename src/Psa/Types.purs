@@ -22,7 +22,7 @@ import Prelude
 
 import Data.Argonaut.Core (Json, jsonNull)
 import Data.Argonaut.Decode (decodeJson, class DecodeJson)
-import Data.Argonaut.Decode.Combinators ((.?))
+import Data.Argonaut.Decode.Combinators ((.:))
 import Data.Argonaut.Encode (encodeJson)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), maybe)
@@ -130,8 +130,8 @@ parsePsaResult :: FO.Object Json -> Either String PsaResult
 parsePsaResult obj =
   { warnings: _
   , errors: _
-  } <$> (obj .? "warnings" >>= traverse parsePsaError)
-    <*> (obj .? "errors" >>= traverse parsePsaError)
+  } <$> (obj .: "warnings" >>= traverse parsePsaError)
+    <*> (obj .: "errors" >>= traverse parsePsaError)
 
 parsePsaError :: FO.Object Json -> Either String PsaError
 parsePsaError obj =
@@ -142,13 +142,13 @@ parsePsaError obj =
   , filename: _
   , position: _
   , suggestion: _
-  } <$> obj .? "moduleName"
-    <*> obj .? "errorCode"
-    <*> obj .? "errorLink"
-    <*> obj .? "message"
-    <*> obj .? "filename"
-    <*> (obj .? "position" >>= parsePosition)
-    <*> (obj .? "suggestion" >>= parseSuggestion)
+  } <$> obj .: "moduleName"
+    <*> obj .: "errorCode"
+    <*> obj .: "errorLink"
+    <*> obj .: "message"
+    <*> obj .: "filename"
+    <*> (obj .: "position" >>= parsePosition)
+    <*> (obj .: "suggestion" >>= parseSuggestion)
 
 parsePosition :: Maybe (FO.Object Json) -> Either String (Maybe Position)
 parsePosition =
@@ -157,18 +157,18 @@ parsePosition =
     , startColumn: _
     , endLine: _
     , endColumn: _
-    } <$> obj .? "startLine"
-      <*> obj .? "startColumn"
-      <*> obj .? "endLine"
-      <*> obj .? "endColumn"
+    } <$> obj .: "startLine"
+      <*> obj .: "startColumn"
+      <*> obj .: "endLine"
+      <*> obj .: "endColumn"
 
 parseSuggestion :: Maybe (FO.Object Json) -> Either String (Maybe Suggestion)
 parseSuggestion =
   maybe (pure Nothing) \obj -> map Just $
     { replacement: _
     , replaceRange: _
-    } <$> obj .? "replacement"
-      <*> (obj .?? "replaceRange" >>= parsePosition)
+    } <$> obj .: "replacement"
+      <*> (obj .:? "replaceRange" >>= parsePosition)
 
 encodePsaResult :: PsaResult -> Json
 encodePsaResult res = encodeJson $ FO.runST do
@@ -202,4 +202,4 @@ encodeSuggestion suggestion = encodeJson $ FO.runST do
 maybeProp :: forall a. (DecodeJson a) => FO.Object Json -> String -> Either String (Maybe a)
 maybeProp obj key = maybe (Right Nothing) decodeJson (FO.lookup key obj)
 
-infix 7 maybeProp as .??
+infix 7 maybeProp as .:?

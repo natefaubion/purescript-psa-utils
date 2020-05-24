@@ -35,7 +35,9 @@ print options output = do
     Console.error $ toString (renderError lenErrors (i + 1) error)
     Console.error ""
 
-  Console.error $ toString (renderStats' output.stats)
+  let renderedStats = toString (renderStats' output.stats)
+  when (renderedStats /= "") do
+    Console.error renderedStats
 
   where
   toString = render options.ansi

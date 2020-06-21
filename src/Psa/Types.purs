@@ -168,7 +168,7 @@ parseSuggestion =
   maybe (pure Nothing) \obj -> map Just $
     { replacement: _
     , replaceRange: _
-    } <$> (obj .: "replacement")
+    } <$> obj .: "replacement"
       <*> (obj .:? "replaceRange" >>= parsePosition)
 
 encodePsaResult :: PsaResult -> Json

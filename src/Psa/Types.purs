@@ -21,9 +21,10 @@ module Psa.Types
 import Prelude
 
 import Data.Argonaut.Core (Json, jsonNull)
-import Data.Argonaut.Decode (decodeJson, class DecodeJson)
-import Data.Argonaut.Decode.Combinators ((.:))
+import Data.Argonaut.Decode (class DecodeJson, decodeJson, printJsonDecodeError)
+import Data.Argonaut.Decode.Combinators as Decode.Combinators
 import Data.Argonaut.Encode (encodeJson)
+import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set)
@@ -167,7 +168,7 @@ parseSuggestion =
   maybe (pure Nothing) \obj -> map Just $
     { replacement: _
     , replaceRange: _
-    } <$> obj .: "replacement"
+    } <$> (obj .: "replacement")
       <*> (obj .:? "replaceRange" >>= parsePosition)
 
 encodePsaResult :: PsaResult -> Json
@@ -200,6 +201,11 @@ encodeSuggestion suggestion = encodeJson $ FO.runST do
   pure obj
 
 maybeProp :: forall a. (DecodeJson a) => FO.Object Json -> String -> Either String (Maybe a)
-maybeProp obj key = maybe (Right Nothing) decodeJson (FO.lookup key obj)
+maybeProp obj key = maybe (Right Nothing) (lmap printJsonDecodeError <<< decodeJson) (FO.lookup key obj)
 
 infix 7 maybeProp as .:?
+
+getField :: forall a. (DecodeJson a) => FO.Object Json -> String -> Either String a
+getField obj key = lmap printJsonDecodeError (Decode.Combinators.getField obj key)
+
+infix 7 getField as .:

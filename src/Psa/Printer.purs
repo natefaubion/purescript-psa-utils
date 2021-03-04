@@ -15,6 +15,7 @@ module Psa.Printer
   ) where
 
 import Prelude
+import Prim hiding (Row)
 
 import Ansi.Codes as Ansi
 import Ansi.Output (foreground, dim)

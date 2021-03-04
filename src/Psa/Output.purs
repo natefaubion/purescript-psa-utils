@@ -234,7 +234,7 @@ trimPosition lines pos =
       Just _            -> trimComment col l
       _                 -> Nothing
 
-  -- TODO: this breaks if "--" is insidentitye a quoted string.
+  -- TODO: this breaks if "--" is inside a quoted string.
   -- TODO: Block comments?
   trimComment col l =
     case Str.indexOf (Str.Pattern "--") l of

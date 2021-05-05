@@ -69,6 +69,7 @@ instance ordPsaPath :: Ord PsaPath where
 type PsaOptions =
   { ansi :: Boolean
   , censorWarnings :: Boolean
+  , censorUserDefinedWarnings :: Set String
   , censorLib :: Boolean
   , censorSrc :: Boolean
   , censorCodes :: Set ErrorCode

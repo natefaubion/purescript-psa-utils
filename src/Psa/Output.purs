@@ -91,7 +91,7 @@ output loadLines options result = do
 
   onError :: ErrorTag -> Output -> Tuple PsaPath PsaError -> m Output
   onError tag state (Tuple path error) =
-    if shouldShowError options tag path error.errorCode
+    if shouldShowError options tag path error
       then do
         source <- fromMaybe (pure Nothing) (loadLines <$> error.filename <*> error.position)
         update [annotatedError path source error]
@@ -147,13 +147,25 @@ updateStats tag path code printed s =
   alterStat Nothing  = Just (bump (Tuple 0 0))
   alterStat (Just x) = Just (bump x)
 
-shouldShowError :: PsaOptions -> ErrorTag -> PsaPath -> String -> Boolean
+shouldShowError :: PsaOptions -> ErrorTag -> PsaPath -> PsaError -> Boolean
 shouldShowError _ Error _ _ = true
-shouldShowError { filterCodes, censorCodes, censorSrc, censorLib, censorWarnings } _ path code =
+shouldShowError options _ path { errorCode, message } =
   not censorWarnings
   && not (censorSrc && isSrc path || censorLib && isLib path)
-  && (Set.isEmpty filterCodes || Set.member code filterCodes)
-  && (Set.isEmpty censorCodes || not (Set.member code censorCodes))
+  && (Set.isEmpty filterCodes || Set.member errorCode filterCodes)
+  && (Set.isEmpty censorCodes || not (Set.member errorCode censorCodes))
+  && (not isUserDefinedWarning || shouldShowUserDefinedWarning)
+  where
+  { filterCodes
+  , censorCodes
+  , censorSrc
+  , censorLib
+  , censorWarnings
+  , censorUserDefinedWarnings
+  } = options
+  isUserDefinedWarning = errorCode == "UserDefinedWarning"
+  shouldShowUserDefinedWarning =
+    not $ any (\warning -> Str.contains (Str.Pattern warning) message) censorUserDefinedWarnings
 
 errorPath :: Array String -> String -> String -> PsaPath
 errorPath libDirs path short =

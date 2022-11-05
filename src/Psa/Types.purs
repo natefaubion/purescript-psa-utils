@@ -1,22 +1,25 @@
 module Psa.Types
   ( ErrorCode
-  , ModuleName
   , Filename
-  , StatVerbosity(..)
-  , PsaOptions
-  , PsaResult
-  , PsaError
-  , PsaAnnotedError
-  , PsaPath(..)
-  , Position
-  , Suggestion
   , Lines
-  , parsePsaResult
-  , parsePsaError
-  , encodePsaResult
-  , encodePsaError
+  , ModuleName
+  , Position
+  , PsaAnnotedError
+  , PsaError
+  , PsaOptions
+  , PsaPath(..)
+  , PsaResult
+  , SinglePosition
+  , SourceSpan
+  , StatVerbosity(..)
+  , Suggestion
   , compareByLocation
-  ) where
+  , encodePsaError
+  , encodePsaResult
+  , parsePsaError
+  , parsePsaResult
+  )
+  where
 
 import Prelude
 
@@ -92,6 +95,7 @@ type PsaError =
   , message :: String
   , filename :: Maybe Filename
   , position :: Maybe Position
+  , allSpans :: Array SourceSpan
   }
 
 type PsaAnnotedError =
@@ -107,6 +111,17 @@ type Position =
   , startColumn :: Int
   , endLine :: Int
   , endColumn :: Int
+  }
+
+type SourceSpan =
+  { name :: String
+  , start :: SinglePosition
+  , end :: SinglePosition
+  }
+
+type SinglePosition =
+  { line :: Int
+  , column :: Int
   }
 
 type Suggestion =
@@ -143,6 +158,7 @@ parsePsaError obj =
   , filename: _
   , position: _
   , suggestion: _
+  , allSpans: _
   } <$> obj .: "moduleName"
     <*> obj .: "errorCode"
     <*> obj .: "errorLink"
@@ -150,6 +166,7 @@ parsePsaError obj =
     <*> obj .: "filename"
     <*> (obj .: "position" >>= parsePosition)
     <*> (obj .: "suggestion" >>= parseSuggestion)
+    <*> (obj .: "allSpans" >>= traverse parseSpan)
 
 parsePosition :: Maybe (FO.Object Json) -> Either String (Maybe Position)
 parsePosition =
@@ -162,6 +179,20 @@ parsePosition =
       <*> obj .: "startColumn"
       <*> obj .: "endLine"
       <*> obj .: "endColumn"
+
+parseSpan :: FO.Object Json -> Either String SourceSpan
+parseSpan obj =
+  { name : _,
+    start: _,
+    end: _
+  } <$> obj .: "name"
+    <*> (obj .: "start" >>= parseSinglePosition)
+    <*> (obj .: "end" >>= parseSinglePosition)
+
+parseSinglePosition :: Array Int -> Either String SinglePosition
+parseSinglePosition = case _ of
+  [ line, column ] -> pure { line, column }
+  _ -> Left "Not a position"
 
 parseSuggestion :: Maybe (FO.Object Json) -> Either String (Maybe Suggestion)
 parseSuggestion =
@@ -188,10 +219,22 @@ encodePsaError error = encodeJson $ FO.runST do
   _ <- FOST.poke "filename"    (encodeJson error.filename) obj
   _ <- FOST.poke "position"    (encodeJson (maybe jsonNull encodePosition error.position)) obj
   _ <- FOST.poke "suggestion"  (encodeJson (maybe jsonNull encodeSuggestion error.suggestion)) obj
+  _ <- FOST.poke "allSpans"    (encodeJson (encodeSpan <$> error.allSpans)) obj
   pure obj
 
 encodePosition :: Position -> Json
 encodePosition = unsafeCoerce
+
+encodeSpan :: SourceSpan -> Json
+encodeSpan span = encodeJson $ FO.runST do
+  obj <- FOST.new
+  _ <- FOST.poke "name"  (encodeJson span.name) obj
+  _ <- FOST.poke "start" (encodeSinglePosition span.start) obj
+  _ <- FOST.poke "end"   (encodeSinglePosition span.end) obj
+  pure obj
+
+encodeSinglePosition :: SinglePosition -> Json
+encodeSinglePosition { line, column } = encodeJson [ line, column ]
 
 encodeSuggestion :: Suggestion -> Json
 encodeSuggestion suggestion = encodeJson $ FO.runST do

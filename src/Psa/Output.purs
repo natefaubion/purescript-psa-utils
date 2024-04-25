@@ -9,6 +9,7 @@ module Psa.Output
 
 import Prelude
 
+import Control.Monad.Rec.Class (class MonadRec)
 import Data.Array as Array
 import Data.Foldable (foldl, any)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -53,7 +54,7 @@ initialStats =
 -- | position information.
 output
   :: forall m
-   . (Monad m)
+   . (Monad m) => (MonadRec m)
   => (Filename -> Position -> m (Maybe Lines))
   -> PsaOptions
   -> PsaResult
@@ -69,8 +70,8 @@ output loadLines options result = do
       , errors: []
       , stats: initialStats
       }
-  state  <- Array.foldM (onError Warning) initialState result'.warnings
-  state' <- Array.foldM (onError Error) state result'.errors
+  state  <- Array.foldRecM (onError Warning) initialState result'.warnings
+  state' <- Array.foldRecM (onError Error) state result'.errors
   pure state'
     { warnings = Array.sortBy compareByLocation state'.warnings
     , errors = Array.sortBy compareByLocation state'.errors

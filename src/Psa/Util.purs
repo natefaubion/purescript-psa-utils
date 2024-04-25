@@ -20,5 +20,5 @@ padRight width str = str <> replicate (width - Str.length str) " "
 
 iter_ :: forall m a b. MonadRec m => Array a -> (Int -> a -> m b) -> m Unit
 iter_ xs f = void $ foldRecM go 0 xs where
-  go i a = (pure $ i + 1) <* f i a
+  go i a = i + 1 <$ f i a
     

@@ -54,7 +54,7 @@ initialStats =
 -- | position information.
 output
   :: forall m
-   . (Monad m) => (MonadRec m)
+   . (MonadRec m)
   => (Filename -> Position -> m (Maybe Lines))
   -> PsaOptions
   -> PsaResult

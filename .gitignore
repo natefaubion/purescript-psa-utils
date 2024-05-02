@@ -4,3 +4,5 @@ output
 npm-debug.log
 .psa-stash
 .psc*
+.purs-repl
+.spago
